@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include <iostream>
+#include <algorithm>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
@@ -17,6 +18,8 @@ void createHistogram(Mat &im, int hist[]);
 void calculateProbabilities(int histogram[], int totalPixels);
 Mat linearTransformation(Mat imOrigin,  Mat imCopy);
 Mat nonLinearTransformation(Mat imOrigin,  Mat imCopy);
+Mat autoScaleTransformation(Mat imOrigin,  Mat imCopy);
+
 
 
 int main()
@@ -26,7 +29,7 @@ int main()
 	int hist[256];
 	string picture[] = { "teste.jpg", "teste2.jpg", "teste3.jpg" };
 	string aux;
-	Mat im, imLinear, imNonLinear;
+	Mat im, imLinear, imNonLinear, imAutoScale;
 	//for (int i = 0; i < 3; i++) {
 	//	aux = "photos/" + picture[i];
 	//	im = imread(aux, IMREAD_GRAYSCALE);
@@ -36,9 +39,10 @@ int main()
 	//	namedWindow(picture[i].c_str(),cv::WINDOW_NORMAL);
 	//	imshow(picture[i].c_str(), im);
 	//}
-	im = imread("photos/" + picture[1], IMREAD_GRAYSCALE);
+	im = imread("photos/" + picture[2], IMREAD_GRAYSCALE);
 	im.copyTo(imLinear);
 	im.copyTo(imNonLinear);
+	im.copyTo(imAutoScale);
 
 	if (!im.data) {
 		std::cout << "Nao foi possivel carregar a imagem : " << picture[1];
@@ -51,9 +55,11 @@ int main()
 	createHistogram(im, hist);
 	imLinear = linearTransformation(im, imLinear);
 	imNonLinear = nonLinearTransformation(im, imNonLinear);
-	imshow(picture[1].c_str(), im);
+	imAutoScale = autoScaleTransformation(im, imAutoScale);
+	imshow(picture[2].c_str(), im);
 	imshow("Tranformacao Linear", imLinear);
 	imshow("Transformacao Nao Linear", imNonLinear);
+	imshow("Auto Escalado", imAutoScale);
 	waitKey(0);
 	cv::destroyAllWindows();
     std::cout << "Hello World!\n"; 
@@ -114,10 +120,7 @@ void createHistogram(Mat &im, int hist[]) {
 			hist[index]++;
 		}
 
-	for (int i = 0; i <= 255; i++) {
-		total += hist[i];
-		cout << "valor " << i << " repetido " << hist[i] << endl;
-	}
+	for (int i = 0; i <= 255; i++) total += hist[i];
 
 	cout << "O total de pixels e: " << total << endl;
 
@@ -182,4 +185,30 @@ Mat nonLinearTransformation(Mat imOrigin, Mat imCopy) {
 
 	return imCopy;
 }
+
+Mat autoScaleTransformation(Mat imOrigin, Mat imCopy) {
+	int result, hist[256], minValueIndex = 0, maxValueIndex = 255;
+
+	createHistogram(imOrigin, hist);
+	while (hist[minValueIndex] == 0) {
+		minValueIndex++;
+	}
+
+	while (hist[maxValueIndex] == 0) {
+		maxValueIndex--;
+	}
+
+	for (int i = 0; i < imOrigin.rows; i++) {
+		for (int j = 0; j < imOrigin.cols; j++) {
+			result = (255 / (maxValueIndex - minValueIndex))*(imOrigin.at<uchar>(i, j) - minValueIndex);
+			if (result < 0) imCopy.at<uchar>(i, j) = 0;
+			else imCopy.at<uchar>(i, j) = result;
+		}
+	}
+
+	cout << "Calculando histograma da imagem transformada auto escalada" << endl;
+	createHistogram(imCopy, hist);
+	return imCopy;
+}
+
 
