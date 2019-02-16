@@ -16,6 +16,7 @@ void convolMask(Mat &img, int convolMask[3][3]);
 void createHistogram(Mat &im, int hist[]);
 void calculateProbabilities(int histogram[], int totalPixels);
 Mat linearTransformation(Mat imOrigin,  Mat imCopy);
+Mat nonLinearTransformation(Mat imOrigin,  Mat imCopy);
 
 
 int main()
@@ -40,7 +41,7 @@ int main()
 	im.copyTo(imNonLinear);
 
 	if (!im.data) {
-		std::cout << "Não foi possivel carregar a imagem : " << picture[1];
+		std::cout << "Nao foi possivel carregar a imagem : " << picture[1];
 	}
 
 	//fillWithZerosOnMargins(im);
@@ -49,8 +50,10 @@ int main()
 	namedWindow(picture[1], cv::WINDOW_AUTOSIZE);
 	createHistogram(im, hist);
 	imLinear = linearTransformation(im, imLinear);
+	imNonLinear = nonLinearTransformation(im, imNonLinear);
 	imshow(picture[1].c_str(), im);
 	imshow("Tranformacao Linear", imLinear);
+	imshow("Transformacao Nao Linear", imNonLinear);
 	waitKey(0);
 	cv::destroyAllWindows();
     std::cout << "Hello World!\n"; 
@@ -164,15 +167,18 @@ Mat linearTransformation(Mat imOrigin, Mat imCopy) {
 }
 
 Mat nonLinearTransformation(Mat imOrigin, Mat imCopy) {
-	int contraste = 1, brilho = 32;
-	int result;
+	float logConst = 31.875;
+	int result, hist[256];
 	for (int i = 0; i < imOrigin.rows; i++) {
 		for (int j = 0; j < imOrigin.cols; j++) {
-			result = contraste * imOrigin.at<uchar>(i, j) + brilho;
+			result = logConst * log2(imOrigin.at<uchar>(i,j) + 1);
 			if (result > 255) imCopy.at<uchar>(i, j) = 255;
 			else imCopy.at<uchar>(i, j) = result;
 		}
 	}
+
+	cout << "Calculando histograma da imagem transformada nao linearmente" << endl;
+	createHistogram(imCopy, hist);
 
 	return imCopy;
 }
