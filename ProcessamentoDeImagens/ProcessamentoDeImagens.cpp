@@ -8,17 +8,23 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/imgproc/imgproc.hpp"
 
+#define BINARYLENGTH 256
+
 using namespace std;
 using namespace cv;
 
 void binaryImage(Mat &img);
 void fillWithZerosOnMargins(Mat &img);
 void convolMask(Mat &img, int convolMask[3][3]);
-void createHistogram(Mat &im, int hist[]);
+void createHistogram(Mat &im, int *hist);
 void calculateProbabilities(int histogram[], int totalPixels);
 Mat linearTransformation(Mat imOrigin,  Mat imCopy);
 Mat nonLinearTransformation(Mat imOrigin,  Mat imCopy);
 Mat autoScaleTransformation(Mat imOrigin,  Mat imCopy);
+
+Mat optimalThresholding(Mat imOriginal, Mat imCopy);
+int optimalThreshold(Mat imOriginal);
+
 
 
 
@@ -29,7 +35,7 @@ int main()
 	int hist[256];
 	string picture[] = { "teste.jpg", "teste2.jpg", "teste3.jpg" };
 	string aux;
-	Mat im, imLinear, imNonLinear, imAutoScale;
+	Mat im, imLinear, imNonLinear, imAutoScale, imOptThreshold;
 	//for (int i = 0; i < 3; i++) {
 	//	aux = "photos/" + picture[i];
 	//	im = imread(aux, IMREAD_GRAYSCALE);
@@ -39,10 +45,11 @@ int main()
 	//	namedWindow(picture[i].c_str(),cv::WINDOW_NORMAL);
 	//	imshow(picture[i].c_str(), im);
 	//}
-	im = imread("photos/" + picture[2], IMREAD_GRAYSCALE);
+	im = imread("photos/" + picture[1], IMREAD_GRAYSCALE);
 	im.copyTo(imLinear);
 	im.copyTo(imNonLinear);
 	im.copyTo(imAutoScale);
+	im.copyTo(imOptThreshold);
 
 	if (!im.data) {
 		std::cout << "Nao foi possivel carregar a imagem : " << picture[1];
@@ -52,17 +59,19 @@ int main()
 	//convolMask(im, maskMatrizH);
 	//convolMask(im, maskMatrizV);
 	namedWindow(picture[1], cv::WINDOW_AUTOSIZE);
-	createHistogram(im, hist);
-	imLinear = linearTransformation(im, imLinear);
-	imNonLinear = nonLinearTransformation(im, imNonLinear);
-	imAutoScale = autoScaleTransformation(im, imAutoScale);
-	imshow(picture[2].c_str(), im);
-	imshow("Tranformacao Linear", imLinear);
-	imshow("Transformacao Nao Linear", imNonLinear);
-	imshow("Auto Escalado", imAutoScale);
+	imOptThreshold = optimalThresholding(im, imOptThreshold);
+	///*createHistogram(im, hist);
+	//imLinear = linearTransformation(im, imLinear);
+	//imNonLinear = nonLinearTransformation(im, imNonLinear);
+	//imAutoScale = autoScaleTransformation(im, imAutoScale);
+	imshow(picture[1].c_str(), im);
+	//imshow("Tranformacao Linear", imLinear);
+	//imshow("Transformacao Nao Linear", imNonLinear);
+	//imshow("Auto Escalado", imAutoScale);
+	//*
+	imshow("Optimal Threshold", imOptThreshold);
 	waitKey(0);
 	cv::destroyAllWindows();
-    std::cout << "Hello World!\n"; 
 }
 
 // Executar programa: Ctrl + F5 ou Menu Depurar > Iniciar Sem Depuração
@@ -109,7 +118,7 @@ void fillWithZerosOnMargins(Mat &img){
 		}
 }
 
-void createHistogram(Mat &im, int hist[]) {
+void createHistogram(Mat &im, int *hist) {
 	int index, total = 0;
 	for (int i = 0; i <= 255; i++)
 		hist[i] = 0;
@@ -171,7 +180,7 @@ Mat linearTransformation(Mat imOrigin, Mat imCopy) {
 
 Mat nonLinearTransformation(Mat imOrigin, Mat imCopy) {
 	float logConst = 31.875;
-	int result, hist[256];
+	int result, hist[BINARYLENGTH];
 	for (int i = 0; i < imOrigin.rows; i++) {
 		for (int j = 0; j < imOrigin.cols; j++) {
 			result = logConst * log2(imOrigin.at<uchar>(i,j) + 1);
@@ -187,9 +196,10 @@ Mat nonLinearTransformation(Mat imOrigin, Mat imCopy) {
 }
 
 Mat autoScaleTransformation(Mat imOrigin, Mat imCopy) {
-	int result, hist[256], minValueIndex = 0, maxValueIndex = 255;
+	int result, hist[BINARYLENGTH], minValueIndex = 0, maxValueIndex = BINARYLENGTH;
 
 	createHistogram(imOrigin, hist);
+
 	while (hist[minValueIndex] == 0) {
 		minValueIndex++;
 	}
@@ -211,4 +221,56 @@ Mat autoScaleTransformation(Mat imOrigin, Mat imCopy) {
 	return imCopy;
 }
 
+// Thresholding
 
+Mat optimalThresholding(Mat imOriginal, Mat imCopy){
+	int threshold = optimalThreshold(imOriginal);
+
+	for(int i = 0; i < imOriginal.rows; i++)
+		for (int j = 0; j < imOriginal.cols; j++) {
+			if (imOriginal.at<uchar>(i, j) < threshold) {
+				imCopy.at<uchar>(i, j) = 0;
+			} else imCopy.at<uchar>(i, j) = 255;
+		}
+
+	return imCopy;
+}
+
+int optimalThreshold(Mat imOriginal){
+	int optThreshold = 125, optThresholdUp = 0, hist[BINARYLENGTH], totalPixels = 0;
+	float histProb[BINARYLENGTH], averageBack, averageFore, probSumBack, probSumFore;
+	double result;
+	
+	createHistogram(imOriginal, hist);
+
+	for (int i = 0; i < BINARYLENGTH; i++) totalPixels += hist[i]; // Calcula o total de pixels na imagem
+
+	for (int i = 0; i < BINARYLENGTH; i++) {
+		result = hist[i];
+		result = result / totalPixels;
+		histProb[i] = result; // Calcula a probabilidade de cada pixel
+	}
+
+	while (optThreshold != optThresholdUp) {
+		averageBack = 0, averageFore = 0;
+		probSumBack = 0, probSumFore = 0;
+		if (optThresholdUp != 0) optThreshold = optThresholdUp;
+
+		for (int i = 0; i < optThreshold; i++) { 
+			probSumBack += histProb[i];
+			averageBack += histProb[i] * i;
+		}
+		averageBack = averageBack / probSumBack; // Calcula a média
+
+		probSumFore = 1 - probSumBack;
+
+		for (int i = optThreshold; i < BINARYLENGTH; i++) {
+			averageFore += histProb[i] * i;
+		}
+		averageFore = averageFore / probSumFore;
+
+		optThresholdUp = (averageBack + averageFore) / 2;
+	}
+	
+	return optThreshold;
+}
