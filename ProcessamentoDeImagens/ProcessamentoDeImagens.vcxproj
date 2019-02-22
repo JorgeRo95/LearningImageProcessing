@@ -157,7 +157,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Constants.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Thresholding.h" />
+    <ClInclude Include="Transformations.h" />
+    <ClInclude Include="Uteis.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -167,6 +172,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ProcessamentoDeImagens.cpp" />
+    <ClCompile Include="Thresholding.cpp" />
+    <ClCompile Include="Transformations.cpp" />
+    <ClCompile Include="Uteis.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ProcessamentoDeImagens.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
