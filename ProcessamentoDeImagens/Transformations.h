@@ -11,9 +11,9 @@
 
 using cv::Mat;
 
-void binaryImage(Mat &img);
-void fillWithZerosOnMargins(Mat &img);
-void convolMask(Mat &img, int convolMask[3][3]);
+void binaryImage(Mat img);
+void fillWithZerosOnMargins(Mat img);
+void convolMask(Mat img, int convolMask[3][3]);
 void createHistogram(Mat im, int *hist);
 void calculateProbabilities(int histogram[], int totalPixels);
 Mat linearTransformation(Mat imOrigin, Mat imCopy);

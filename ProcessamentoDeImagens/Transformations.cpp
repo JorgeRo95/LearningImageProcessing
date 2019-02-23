@@ -1,15 +1,17 @@
+#include "pch.h"
 #include "Transformations.h"
-using std::cout;
-using std::endl;
 
-void binaryImage(Mat &img) {
+using namespace std;
+using cv::Mat;
+
+void binaryImage(Mat img) {
 	for (int i = 0; i < img.rows; i++)
 		for (int j = 0; j < img.cols; j++) {
 			img.at<uchar>(i, j) = (img.at<uchar>(i, j) <= 128) ? 0 : 255;
 		}
 }
 
-void convolMask(Mat &img, int convolMask[3][3]) {
+void convolMask(Mat img, int convolMask[3][3]) {
 	for (int i = 1; i < img.rows - 1; i++)
 		for (int j = 1; j < img.cols - 1; j++) {
 			img.at<uchar>(i, j) =
@@ -27,7 +29,7 @@ void convolMask(Mat &img, int convolMask[3][3]) {
 		}
 }
 
-void fillWithZerosOnMargins(Mat &img) {
+void fillWithZerosOnMargins(Mat img) {
 	for (int i = 0; i < img.rows; i++)
 		for (int j = 0; j < img.cols; j++) {
 			if (i == 0 || j == 0 || i == (img.cols - 1) || j == (img.rows - 1)) {
@@ -85,7 +87,7 @@ Mat linearTransformation(Mat imOrigin, Mat imCopy) {
 	int result;
 	for (int i = 0; i < imOrigin.rows; i++) {
 		for (int j = 0; j < imOrigin.cols; j++) {
-			result = contraste * imOrigin.at<uchar>(i, j) + brilho;
+			result = (contraste * imOrigin.at<uchar>(i, j)) + brilho;
 			if (result > 255) imCopy.at<uchar>(i, j) = 255;
 			else imCopy.at<uchar>(i, j) = result;
 		}

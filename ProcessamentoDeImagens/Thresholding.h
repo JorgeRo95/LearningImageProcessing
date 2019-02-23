@@ -10,9 +10,13 @@
 #include "Uteis.h"
 
 using cv::Mat;
+using std::cout;
+using std::endl;
 
 Mat optimalThresholding(Mat imOriginal, Mat imCopy);
 int optimalThreshold(Mat imOriginal);
 
 Mat otsuThresholding(Mat imOrigin, Mat imCopy);
 int calculateOtsuThreshold(Mat imOrigin);
+
+Mat adaptiveThresholding(Mat imOrigin, Mat imCopy); // Utiliza uma imagem integral para realizar as computações

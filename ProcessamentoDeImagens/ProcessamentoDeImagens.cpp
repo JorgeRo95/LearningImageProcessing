@@ -1,5 +1,6 @@
 // ProcessamentoDeImagens.cpp : Este arquivo contém a função 'main'. A execução do programa começa e termina ali.
 //
+#include "pch.h"
 #include "Transformations.h"
 #include "Thresholding.h"
 
@@ -14,14 +15,15 @@ int main()
 	int hist[256];
 	string picture[] = { "teste.jpg", "teste2.jpg", "teste3.jpg" };
 	string aux;
-	Mat im, imLinear, imNonLinear, imAutoScale, imOptThreshold, imOtsu;
+	Mat im, imLinear, imNonLinear, imAutoScale, imOptThreshold, imOtsu, imAdaptative;
 
-	im = imread("photos/" + picture[0], IMREAD_GRAYSCALE);
-	im.copyTo(imLinear);
+	im = imread("photos/" + picture[1], IMREAD_GRAYSCALE);
+	/*im.copyTo(imLinear);
 	im.copyTo(imNonLinear);
-	im.copyTo(imAutoScale);
+	im.copyTo(imAutoScale);*/
 	im.copyTo(imOptThreshold);
 	im.copyTo(imOtsu);
+	im.copyTo(imAdaptative);
 
 	if (!im.data) {
 		std::cout << "Nao foi possivel carregar a imagem : " << picture[1];
@@ -30,19 +32,26 @@ int main()
 	//fillWithZerosOnMargins(im);
 	//convolMask(im, maskMatrizH);
 	//convolMask(im, maskMatrizV);
-	namedWindow(picture[1], cv::WINDOW_AUTOSIZE);
-	imOptThreshold = optimalThresholding(im, imOptThreshold);
-	imOtsu = otsuThresholding(im, imOtsu);
+
+	namedWindow(picture[0], cv::WINDOW_AUTOSIZE);
 	createHistogram(im, hist);
-	imLinear = linearTransformation(im, imLinear);
-	imNonLinear = nonLinearTransformation(im, imNonLinear);
-	imAutoScale = autoScaleTransformation(im, imAutoScale);
+
+//	/*imLinear = linearTransformation(im, imLinear);
+//	imNonLinear = nonLinearTransformation(im, imNonLinear);
+//	imAutoScale = autoScaleTransformation(im, imAutoScale);
+//*/
+	imOtsu = otsuThresholding(im, imOtsu);
+	imOptThreshold = optimalThresholding(im, imOptThreshold);
+	imAdaptative = adaptiveThresholding(im, imAdaptative);
 	imshow(picture[1].c_str(), im);
-	imshow("Tranformacao Linear", imLinear);
-	imshow("Transformacao Nao Linear", imNonLinear);
-	imshow("Auto Escalado", imAutoScale);
+	//imshow("Tranformacao Linear", imLinear);
+	//imshow("Transformacao Nao Linear", imNonLinear);
+	//imshow("Auto Escalado", imAutoScale);
 	imshow("Optimal Threshold", imOptThreshold);
 	imshow("Otsu Threshold", imOtsu);
+	imshow("Adaptive Threshold", imAdaptative);
+
+	histImageCreate(im, hist);
 	waitKey(0);
 	cv::destroyAllWindows();
 	return 0;
